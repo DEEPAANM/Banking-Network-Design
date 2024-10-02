@@ -1,0 +1,351 @@
+-------------------------------------------------------------------------------------------------------------------------------------
+#"this Configuration is the configuration for Layer 2 SW
+Hostnames
+Line Console and VTY passwords
+Banner messages
+Disable domain IP lookup"#
+
+en
+conf t
+
+hostname Layer-2-SW
+banner motd #This is layer-2-SW #
+
+line console 0
+password cisco
+login
+exit
+
+line vty 0 15
+password cisco
+login
+exit
+
+no ip domain-lookup
+enable password cisco
+service password-encryption
+
+do wr
+
+{The no ip domain-lookup command in Cisco devices is used to disable the DNS lookup feature. By default, 
+when a user mistypes a command, the device assumes it's a hostname and tries to resolve it through DNS. 
+This results in a delay as the device attempts to look up the mistyped command.
+
+When you enter no ip domain-lookup, it prevents the device from automatically 
+trying to resolve unknown commands as DNS queries, which can save time during troubleshooting 
+or configuration.
+Use Case Example:
+You type a command incorrectly, like shwo running-config, and without no ip domain-lookup configured, 
+the device would try to resolve shwo as a hostname, leading to a delay.
+By enabling no ip domain-lookup, the device will simply return an error without attempting a DNS query.
+This command is especially useful in lab or training environments to avoid unnecessary wait times.}
+
+-----------------------------------------------------------------------------------------------------------------------------------
+#"this Configuration is the configuration for Layer 3 SW"#
+
+en
+config ter
+hostname Layer-3-SW
+banner motd #This is Layer-3-SW-1 #
+
+line console 0
+password cisco
+login
+ex
+
+no ip domain-lookup
+enable password cisco
+service password-encryption
+ 
+ip domain-name cisco.net
+username cisco password cisco
+crypto key generate rsa
+1024
+
+line vty 0 15
+login
+login local
+transport input ssh
+exit
+
+do wr
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#"this Configuration is the configuration for Core Layer router"#
+
+en
+config ter
+hostname core-layer-router
+banner motd #core-layer-router #
+
+line console 0
+password cisco
+login
+ex
+
+no ip domain-lookup
+enable password cisco
+service password-encryption
+ 
+ip domain-name cisco.net
+username cisco password cisco
+crypto key generate rsa
+1024
+
+line vty 0 15
+login
+login local
+transport input ssh
+exit
+
+do wr
+
+------------------------------------------------------------------------------------------------------------------------------------
+#"L2 switch trunk prot and access port (VLAN 10) Management"#
+
+
+int range g0/1-2
+switchport mode trunk
+exit
+
+int range fa0/1-24
+switchport mode access
+switchport access vlan 120
+switchport port-security
+switchport port-security maximum 2
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+
+do wr
+
+exit
+
+do sh start
+
+do sh port-security
+
+do it for all 12 L2 switch with (VLAN 10 to 120)
+
+--------------------------------------------------------------------------------------------------------------------------------------
+#"config the L3 Switches"# 
+
+int range gig1/0/3-8
+switchport mode trunk
+exit
+int range gig1/0/1-2
+no switchport
+exit
+int gig1/0/1
+ip address 10.10.10.53 255.255.255.252
+exit
+int gig1/0/2
+ip address 10.10.10.49 255.255.255.252
+exit
+
+EX: {Switch(config)# interface gigabitEthernet 0/1
+Switch(config-if)# no switchport
+Switch(config-if)# ip address 192.168.1.1 255.255.255.0
+Switch(config-if)# no shutdown}
+
+{ The no switchport command in Cisco IOS is used to configure a Layer 3 interface on a
+ switch. By default, most switch ports operate as Layer 2 interfaces, meaning they 
+handle Ethernet frames and are associated with VLANs. The no switchport command 
+converts a Layer 2 switch port into a Layer 3 routed interface, allowing the port
+ to be used for IP routing instead of switching.
+
+Explanation:
+Layer 2 (Switchport): Switch ports (Layer 2 interfaces) forward Ethernet frames
+ based on MAC addresses and are typically associated with VLANs.
+
+Layer 3 (Routed Interface): When you use the no switchport command, the port becomes
+ a routed port (Layer 3 interface), capable of having an IP address assigned to it and 
+being used for routing IP traffic.
+
+Use Case:
+You would typically use the no switchport command on a switch when you want to route
+ traffic between different networks (VLANs or subnets) directly through the switch.
+This command is commonly used on multilayer switches (like Cisco Catalyst switches)
+ that support both Layer 2 and Layer 3 operations, allowing them to act as routers for inter-VLAN routing.
+
+
+In this example:
+
+The interface gigabitEthernet 0/1 is converted into a Layer 3 interface by issuing the no switchport command.
+An IP address is assigned to the port, and the port is used for routing instead of switching.
+Summary:
+The no switchport command disables Layer 2 switching on a switch port and enables Layer 3 routing.
+The port can now have an IP address, making it a routed interface for handling Layer 3 traffic.}
+
+----------------------------------------------------------------------------------------------------------------------------------------
+#"core routers config"#
+
+int gig0/1
+ip add 10.10.10.30 255.255.255.252
+ex
+
+int gig0/2
+ip add 10.10.10.46 255.255.255.252
+ex
+
+int gig0/0
+ip add 10.10.10.54 255.255.255.252
+ex
+
+int se0/0/0
+ip add 10.10.10.26 255.255.255.252
+clock rate 64000
+ex
+
+int se0/0/1 
+ip add 10.10.10.38 255.255.255.252
+clock rate 64000
+ex
+do wr
+
+---------------------------------------------------------------
+the switches L3 and routers connection and config ip's all
+
+---------------------------------------------------------------
+enabling all routers ospf (R1,R2,R3,R4)
+---------------------------------------------------------------
+enabling the all L3 switches of the OSPF routing 
+
+ip routing
+router ospf 10
+network 10.10.10.52 0.0.0.3 area 0
+network 10.10.10.48 0.0.0.3 area 0
+
+network 192.168.11.128 0.0.0.63 area 0
+network 192.168.11.192 0.0.0.63 area 0
+network 192.168.12.0 0.0.0.63 area 0
+network 192.168.12.64 0.0.0.63 area 0
+network 192.168.12.128 0.0.0.63 area 0
+network 192.168.12.192 0.0.0.63 area 0
+
+ex
+do wr
+
+----------------------------------------------------------------
+Static IP address to Server Room devices
+
+DHCP-SERVER IP :  config static ip 192.168.12.196 255.255.255.192 192.168.12.193
+
+Services DHCP enable all departments in DHCP services 
+
+-----------------------------------------------------------------
+Inter-VLAN routing on the 13 switches plus IP DHCP helper addresses
+
+vlan 10
+vlan 20
+vlan 30
+vlan 40
+vlan 50
+vlan 60
+
+int vlan 10
+no shutdown
+ip add 192.168.10.1 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 20
+no shutdown
+ip add 192.168.10.65 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 30
+no shutdown
+ip add 192.168.10.129 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 40
+no shutdown
+ip add 192.168.10.193 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 50
+no shutdown
+ip add 192.168.11.1 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 60
+no shutdown
+ip add 192.168.11.65 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+do wr
+-------------------------------
+vlan 70
+vlan 80
+vlan 90
+vlan 100
+vlan 110
+vlan 120
+
+int vlan 70
+no shutdown
+ip add 192.168.11.129 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 80
+no shutdown
+ip add 192.168.11.193 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 90
+no shutdown
+ip add 192.168.12.1 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 100
+no shutdown
+ip add 192.168.12.65 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 110
+no shutdown
+ip add 192.168.12.129 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+int vlan 120
+no shutdown
+ip add 192.168.12.193 255.255.255.192
+ip helper-address 192.168.12.196
+ex
+
+do wr
+
+after this in all pc enable the dynamic ip allocation 
+
+--------------------------------------------------------------
+in DHCP-Server config DNS also
+
+in DHCP service change the DNS ip as the server static ip address 
+and give the (www.FCFCbank.com)
+
+-----------------------------------------------------------------
+configuring the WIFI 
+
+ex SSID: management-wifi
+   password : fcfc1234
+
+do it for all wifi in the network
+
+------------------------------------------------------------------
+
+
+
+
+
+
+
